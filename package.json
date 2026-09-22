@@ -6,12 +6,30 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "seed": "npx -y tsx scripts/seed.ts",
+    "test:state": "npx -y tsx scripts/test-task-state.ts",
+    "test:dag": "npx -y tsx scripts/test-dag.ts",
+    "test:sched": "npx -y tsx scripts/test-scheduling.ts",
+    "test:crud": "npx -y tsx scripts/test-crud.ts",
+    "test:deps": "npx -y tsx scripts/test-api-dependencies.ts",
+    "test:ai": "npx -y tsx scripts/test-ai-suggestions.ts",
+    "test:cp": "npx -y tsx scripts/test-critical-path.ts",
+    "test:all": "npx -y tsx scripts/test-all-14-requirements.ts",
+    "test": "npx -y tsx scripts/test-all-14-requirements.ts && npx -y tsx scripts/test-task-state.ts && npx -y tsx scripts/test-dag.ts && npx -y tsx scripts/test-scheduling.ts && npx -y tsx scripts/test-crud.ts && npx -y tsx scripts/test-api-dependencies.ts && npx -y tsx scripts/test-ai-suggestions.ts && npx -y tsx scripts/test-critical-path.ts"
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/modifiers": "^9.0.0",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.47.0",
+    "mongoose": "^9.10.1",
     "next": "16.3.6",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "tailwind-merge": "^3.7.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -21,6 +39,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.6",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5"
   }
 }
