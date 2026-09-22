@@ -28,9 +28,9 @@ export function Sidebar({ className }: SidebarProps) {
   const navigation = [
     { id: "board", name: "Task Board", icon: FolderKanban, href: "/" },
     { id: "graph", name: "DAG Graph", icon: GitBranch, href: "/graph", badge: "Critical" },
-    { id: "tasks", name: "My Tasks", icon: CheckSquare, badge: "4" },
-    { id: "analytics", name: "Analytics", icon: BarChart3 },
-    { id: "settings", name: "Settings", icon: Settings },
+    { id: "tasks", name: "My Tasks", icon: CheckSquare, href: "/tasks" },
+    { id: "analytics", name: "Analytics", icon: BarChart3, href: "/analytics" },
+    { id: "settings", name: "Settings", icon: Settings, href: "/settings" },
   ];
 
   const projects = [

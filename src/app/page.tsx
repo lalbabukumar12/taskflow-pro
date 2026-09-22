@@ -10,15 +10,13 @@ import { DependencyGraph } from "@/components/graph/DependencyGraph";
 import { TaskDetailModal } from "@/components/kanban/TaskDetailModal";
 import { TaskModal } from "@/components/kanban/TaskModal";
 import { DeleteTaskModal } from "@/components/kanban/DeleteTaskModal";
-import { Task } from "@/types/task";
+import { Task, TaskStatus } from "@/types/task";
 import { useToast } from "@/components/ui/Toast";
 import {
   GitFork,
   ShieldCheck,
   FolderKanban,
   GitBranch,
-  Flame,
-  Plus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -26,11 +24,13 @@ export default function DashboardPage() {
   const { showToast } = useToast();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [activeView, setActiveView] = useState<"BOARD" | "GRAPH">("BOARD");
+  const [searchQuery, setSearchQuery] = useState("");
 
-  // Modals for graph selection
+  // Modals for task management
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [modalInitialStatus, setModalInitialStatus] = useState<TaskStatus>("BACKLOG");
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -43,9 +43,13 @@ export default function DashboardPage() {
         setTasks(json.data || []);
       }
     } catch {
-      // handled in board
+      // Handled in subcomponents
     }
   }, []);
+
+  useEffect(() => {
+    fetchTasks();
+  }, [fetchTasks]);
 
   const stats = useMemo(() => {
     const totalTasks = tasks.length;
@@ -66,6 +70,68 @@ export default function DashboardPage() {
       readyTasks,
     };
   }, [tasks]);
+
+  const handleOpenCreateModal = (status: TaskStatus = "BACKLOG") => {
+    setEditingTask(null);
+    setModalInitialStatus(status);
+    setIsTaskModalOpen(true);
+  };
+
+  const handleSaveTask = async (taskData: Partial<Task>) => {
+    try {
+      if (editingTask) {
+        const res = await fetch(`/api/tasks/${editingTask.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(taskData),
+        });
+        const json = await res.json();
+        if (!res.ok || !json.success) {
+          throw new Error(json.error || "Failed to update task");
+        }
+        showToast("success", "Task Updated", `"${taskData.title}" has been updated.`);
+      } else {
+        const res = await fetch("/api/tasks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(taskData),
+        });
+        const json = await res.json();
+        if (!res.ok || !json.success) {
+          throw new Error(json.error || "Failed to create task");
+        }
+        showToast("success", "Task Created", `"${taskData.title}" has been created.`);
+      }
+
+      await fetchTasks();
+      setIsTaskModalOpen(false);
+      setEditingTask(null);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "An error occurred";
+      showToast("error", "Save Failed", msg);
+      throw err;
+    }
+  };
+
+  const handleConfirmDelete = async (taskId: string) => {
+    try {
+      const res = await fetch(`/api/tasks/${taskId}`, {
+        method: "DELETE",
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        throw new Error(json.error || "Failed to delete task");
+      }
+      showToast("success", "Task Deleted", "The task was removed from your workspace.");
+      await fetchTasks();
+      setIsDeleteModalOpen(false);
+      setTaskToDelete(null);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to delete task";
+      showToast("error", "Delete Failed", msg);
+      throw err;
+    }
+  };
 
   const handleSelectTaskFromGraph = (task: Task) => {
     setSelectedTask(task);
@@ -129,8 +195,12 @@ export default function DashboardPage() {
 
       {/* Main Content Area */}
       <div className="flex flex-1 flex-col overflow-hidden">
-        {/* Header */}
-        <Header />
+        {/* Header with Functional New Task Button and Search */}
+        <Header
+          onNewTask={() => handleOpenCreateModal("BACKLOG")}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+        />
 
         {/* Scrollable Dashboard View */}
         <main className="flex-1 overflow-y-auto px-4 sm:px-6 py-5 space-y-5">
@@ -200,6 +270,16 @@ export default function DashboardPage() {
         </main>
       </div>
 
+      {/* Task Creation & Edit Modal */}
+      <TaskModal
+        isOpen={isTaskModalOpen}
+        onClose={() => setIsTaskModalOpen(false)}
+        onSave={handleSaveTask}
+        task={editingTask}
+        allTasks={tasks}
+        initialStatus={modalInitialStatus}
+      />
+
       {/* Task Detail Modal for Graph Inspections */}
       <TaskDetailModal
         isOpen={isDetailModalOpen}
@@ -218,6 +298,16 @@ export default function DashboardPage() {
         }}
         onAddDependency={handleAddDependency}
         onRemoveDependency={handleRemoveDependency}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <DeleteTaskModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={async () => {
+          if (taskToDelete) await handleConfirmDelete(taskToDelete.id);
+        }}
+        task={taskToDelete}
       />
     </div>
   );
